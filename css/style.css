@@ -1,0 +1,69 @@
+/* css/style.css - dark purple theme + proportional Gantt styling */
+:root { --bg:#120c1f; --side:#1a1130; --card:#201638; --line:#33265a; --text:#ece6fa; --muted:#a699c9;
+        --accent:#8b5cf6; --danger:#f87171; }
+* { box-sizing: border-box; }
+body { margin:0; display:flex; min-height:100vh; background:var(--bg); color:var(--text);
+       font:15px/1.5 "Segoe UI", system-ui, sans-serif; }
+
+/* Sidebar */
+.sidebar { width:240px; background:var(--side); border-right:1px solid var(--line); padding:24px 18px;
+           display:flex; flex-direction:column; gap:20px; position:sticky; top:0; height:100vh; }
+.brand h1 { margin:0; font-size:20px; } .brand p { margin:2px 0 0; color:var(--muted); font-size:13px; }
+.tab { display:block; padding:10px 12px; border-radius:8px; color:var(--text); text-decoration:none; }
+.tab.active { background:var(--accent); }
+#presetBtn { margin-top:auto; }
+
+/* Layout + cards */
+.content { flex:1; padding:28px; max-width:1100px; display:flex; flex-direction:column; gap:20px; min-width:0; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+.card h2 { margin:0 0 14px; font-size:17px; }
+.banner { background:#3b1420; border:1px solid var(--danger); color:#fecaca; padding:12px 16px; border-radius:8px; }
+[hidden] { display:none !important; }
+
+/* Inputs + buttons */
+input[type=text], input[type=number] { width:100%; background:#150e28; color:var(--text);
+        border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; }
+input:focus, button:focus-visible { outline:2px solid var(--accent); outline-offset:1px; }
+.btn { border:1px solid var(--line); background:transparent; color:var(--text); padding:9px 14px;
+       border-radius:8px; cursor:pointer; font:inherit; }
+.btn:hover { border-color:var(--accent); }
+.btn.primary { background:var(--accent); border-color:var(--accent); font-weight:600; padding:12px 28px; font-size:16px; }
+.btn.primary:hover { background:#7c3aed; }
+.btn.remove { color:var(--danger); padding:6px 10px; }
+.input-table { width:100%; border-collapse:collapse; margin-bottom:12px; }
+.input-table th { text-align:left; color:var(--muted); font-weight:500; padding:4px 6px; }
+.input-table td { padding:4px 6px; }
+.algos { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:14px; }
+.algos label { cursor:pointer; } .algos input { accent-color:var(--accent); }
+.tq { display:flex; align-items:center; gap:12px; margin-bottom:16px; } .tq input { width:90px; }
+
+/* Gantt chart: each segment grows in proportion to its duration (flex-grow = duration) */
+.track { display:flex; gap:2px; overflow-x:auto; padding-bottom:6px; }
+.seg { flex-basis:0; min-width:64px; display:flex; flex-direction:column; align-items:stretch; transition:opacity .15s; }
+.block { height:56px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+         font-weight:700; color:#0d0820; }
+.block.idle { color:var(--muted); background:repeating-linear-gradient(45deg,#2a2045 0 8px,#1b1233 8px 16px);
+              border:1px dashed var(--muted); }
+.badge { margin-top:6px; text-align:center; font-size:12px; color:var(--muted); background:#150e28;
+         border:1px solid var(--line); border-radius:999px; padding:2px 6px; white-space:nowrap; }
+.track.focus .seg:not(.hl) { opacity:.3; }   /* dim others while a table row / block is hovered */
+
+/* Results */
+.pills { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:16px; }
+.pill { background:#2b1d52; border:1px solid var(--accent); border-radius:999px; padding:8px 18px;
+        display:flex; gap:12px; align-items:center; }
+.pill span { color:var(--muted); } .pill strong { font-size:20px; }
+.scroll { overflow-x:auto; }
+.result-table { width:100%; border-collapse:collapse; text-align:center; }
+.result-table th, .result-table td { padding:9px 10px; border-bottom:1px solid var(--line); }
+.result-table th { color:var(--muted); font-weight:500; }
+.result-table tr:hover td { background:#2a1d4d; }
+.dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; }
+
+/* Responsive: sidebar becomes a top bar on small screens */
+@media (max-width:800px) {
+  body { flex-direction:column; }
+  .sidebar { width:100%; height:auto; position:static; flex-direction:row; flex-wrap:wrap; align-items:center; }
+  #presetBtn { margin-top:0; margin-left:auto; }
+  .content { padding:16px; }
+}
