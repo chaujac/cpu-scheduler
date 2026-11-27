@@ -6,8 +6,24 @@ from models import ValidationError, validate_processes, validate_quantum
 from scheduler import run_fcfs, run_sjf, run_round_robin, verify_timeline
 from presets import PRESETS, load_file
 
-PALETTE = ["#a78bfa", "#22d3ee", "#fbbf24", "#34d399", "#f472b6", "#60a5fa", "#fb923c", "#a3e635"]
-BG, PANEL, FG = "#1b1230", "#261a45", "#ece6fa"
+# Gantt block colors in process order: blue, green, orange first, then extras for P4+
+PALETTE = ["#3b9eff", "#5fd35f", "#f7a531", "#a78bfa", "#f472b6", "#22d3ee", "#facc15", "#fb7185"]
+
+# Dark purple theme
+BG = "#17132c"  # window background
+PANEL = "#211b3b"  # panels and cards
+FIELD = "#1a1531"  # text boxes and table cells
+BORDER = "#3a3263"  # thin outlines
+FG = "#f4f2fb"  # main text
+MUTED = "#b4add3"  # secondary text and column headers
+ACCENT = "#8b5cf6"  # violet buttons, focus and selection
+ACCENT_DARK = "#7c3aed"  # violet when hovered
+ACCENT_DEEP = "#6d28d9"  # violet when pressed
+HOVER = "#2c2350"  # outlined buttons when hovered
+SUMMARY = "#2d2257"  # average-time cards
+SUMMARY_EDGE = "#4b3b8f"  # average-time card outline
+IDLE = "#c9c8d1"  # idle Gantt block
+BLOCK_TEXT = "#14112a"  # text on Gantt blocks
 
 
 class App(tk.Tk):
@@ -19,9 +35,135 @@ class App(tk.Tk):
         self.entry_rows = []  # [(frame, pid_var, at_var, bt_var)]
         self.algo = tk.StringVar(value="FCFS")
         self.tq = tk.StringVar(value="2")
+        self._style()
         self._build()
         self.set_rows(PRESETS["Sample A"])
         self._update_tq_state()
+        self._dark_title_bar()
+
+    # ---------- theme ----------
+    def _style(self):
+        s = ttk.Style(self)
+        s.theme_use("clam")  # the built-in ttk theme that accepts custom colors
+        s.configure(
+            ".",
+            background=PANEL,
+            foreground=FG,
+            bordercolor=BORDER,
+            lightcolor=PANEL,
+            darkcolor=PANEL,
+            troughcolor=BG,
+            focuscolor=ACCENT,
+            selectbackground=ACCENT,
+            selectforeground="#ffffff",
+            insertcolor=FG,
+        )
+        # Outlined violet buttons (Add Process, Load, presets, x)
+        s.configure(
+            "TButton",
+            background=PANEL,
+            foreground="#d9cdff",
+            bordercolor=ACCENT,
+            lightcolor=PANEL,
+            darkcolor=PANEL,
+        )
+        s.map(
+            "TButton",
+            background=[("pressed", SUMMARY), ("active", HOVER)],
+            lightcolor=[("pressed", SUMMARY), ("active", HOVER)],
+            darkcolor=[("pressed", SUMMARY), ("active", HOVER)],
+            foreground=[("active", "#ffffff")],
+        )
+        # Filled violet button (Run Simulation)
+        s.configure(
+            "Accent.TButton",
+            background=ACCENT,
+            foreground="#ffffff",
+            bordercolor=ACCENT,
+            lightcolor=ACCENT,
+            darkcolor=ACCENT,
+        )
+        s.map(
+            "Accent.TButton",
+            background=[("pressed", ACCENT_DEEP), ("active", ACCENT_DARK)],
+            lightcolor=[("pressed", ACCENT_DEEP), ("active", ACCENT_DARK)],
+            darkcolor=[("pressed", ACCENT_DEEP), ("active", ACCENT_DARK)],
+            bordercolor=[("pressed", ACCENT_DEEP), ("active", ACCENT_DARK)],
+        )
+        # Algorithm choices: empty dark circle, filled violet when selected
+        s.configure(
+            "TRadiobutton",
+            background=PANEL,
+            foreground=FG,
+            indicatorbackground=FIELD,
+            indicatorforeground="#ffffff",
+            upperbordercolor=MUTED,
+            lowerbordercolor=MUTED,
+        )
+        s.map(
+            "TRadiobutton",
+            background=[("active", PANEL)],
+            indicatorbackground=[("selected", ACCENT)],
+            upperbordercolor=[("selected", ACCENT)],
+            lowerbordercolor=[("selected", ACCENT)],
+        )
+        s.configure(
+            "TEntry",
+            fieldbackground=FIELD,
+            foreground=FG,
+            bordercolor=BORDER,
+            lightcolor=FIELD,
+            darkcolor=FIELD,
+            insertcolor=FG,
+        )
+        s.map(
+            "TEntry",
+            bordercolor=[("focus", ACCENT)],
+            lightcolor=[("focus", ACCENT)],
+            darkcolor=[("focus", ACCENT)],
+            fieldbackground=[("disabled", BG)],
+            foreground=[("disabled", "#6e6790")],
+        )
+        s.configure(
+            "Treeview",
+            background=FIELD,
+            fieldbackground=FIELD,
+            foreground=FG,
+            bordercolor=BORDER,
+            lightcolor=FIELD,
+            darkcolor=FIELD,
+        )
+        s.map("Treeview", background=[("selected", ACCENT)], foreground=[("selected", "#ffffff")])
+        s.configure(
+            "Treeview.Heading",
+            background=PANEL,
+            foreground=FG,
+            bordercolor=BORDER,
+            lightcolor=PANEL,
+            darkcolor=PANEL,
+        )
+        s.map("Treeview.Heading", background=[("pressed", SUMMARY), ("active", HOVER)])
+        s.configure(
+            "Horizontal.TScrollbar",
+            background=BORDER,
+            troughcolor=BG,
+            bordercolor=BG,
+            arrowcolor=MUTED,
+            lightcolor=BORDER,
+            darkcolor=BORDER,
+        )
+        s.map("Horizontal.TScrollbar", background=[("active", ACCENT)])
+
+    def _dark_title_bar(self):  # Windows 10/11 only; other systems keep their own title bar
+        try:
+            import ctypes
+
+            self.update_idletasks()
+            hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+            on = ctypes.c_int(1)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(on), ctypes.sizeof(on))
+        except (AttributeError, OSError):
+            pass
 
     # ---------- layout ----------
     def _build(self):
@@ -30,14 +172,14 @@ class App(tk.Tk):
         tk.Label(left, text="CPU Scheduler", bg=PANEL, fg=FG, font=("Segoe UI", 16, "bold")).pack(
             anchor="w"
         )
-        tk.Label(left, text="CS 3104N - Group 9", bg=PANEL, fg="#a699c9").pack(
+        tk.Label(left, text="CS 3104N - Group 9", bg=PANEL, fg=MUTED).pack(
             anchor="w", pady=(0, 10)
         )
 
         head = tk.Frame(left, bg=PANEL)
         head.pack(fill="x")
         for text in ("PID", "Arrival", "Burst"):
-            tk.Label(head, text=text, bg=PANEL, fg="#a699c9", width=9, anchor="w").pack(side="left")
+            tk.Label(head, text=text, bg=PANEL, fg=MUTED, width=9, anchor="w").pack(side="left")
         self.rows_frame = tk.Frame(left, bg=PANEL)
         self.rows_frame.pack(fill="x")
 
@@ -54,31 +196,28 @@ class App(tk.Tk):
 
         tk.Label(left, text="Algorithm", bg=PANEL, fg=FG).pack(anchor="w", pady=(12, 2))
         for label, val in (("FCFS", "FCFS"), ("SJF", "SJF"), ("Round Robin", "RR")):
-            tk.Radiobutton(
+            ttk.Radiobutton(
                 left,
                 text=label,
                 variable=self.algo,
                 value=val,
                 command=self._update_tq_state,
-                bg=PANEL,
-                fg=FG,
-                selectcolor=BG,
-                activebackground=PANEL,
-                activeforeground=FG,
             ).pack(anchor="w")
         tqf = tk.Frame(left, bg=PANEL)
         tqf.pack(anchor="w", pady=6)
         tk.Label(tqf, text="Time quantum", bg=PANEL, fg=FG).pack(side="left")
         self.tq_entry = ttk.Entry(tqf, textvariable=self.tq, width=6)
         self.tq_entry.pack(side="left", padx=6)
-        ttk.Button(left, text="Run Simulation", command=self.run).pack(fill="x", pady=10, ipady=6)
+        ttk.Button(left, text="Run Simulation", command=self.run, style="Accent.TButton").pack(
+            fill="x", pady=10, ipady=6
+        )
 
         right = tk.Frame(self, bg=BG, padx=12, pady=12)
         right.pack(side="left", fill="both", expand=True)
         tk.Label(right, text="Gantt chart", bg=BG, fg=FG, font=("Segoe UI", 12, "bold")).pack(
             anchor="w"
         )
-        self.canvas = tk.Canvas(right, height=120, bg="#150e28", highlightthickness=0)
+        self.canvas = tk.Canvas(right, height=120, bg=PANEL, highlightthickness=0)
         sx = ttk.Scrollbar(right, orient="horizontal", command=self.canvas.xview)
         self.canvas.configure(xscrollcommand=sx.set)
         self.canvas.pack(fill="x")
@@ -88,7 +227,7 @@ class App(tk.Tk):
         cards.pack(fill="x", pady=10)
         self.lbl_tat = self._card(cards, "Average Turnaround Time")
         self.lbl_wt = self._card(cards, "Average Waiting Time")
-        self.lbl_chk = tk.Label(cards, text="", bg=BG, fg="#a699c9")
+        self.lbl_chk = tk.Label(cards, text="", bg=BG, fg=MUTED)
         self.lbl_chk.pack(side="left", padx=10)
 
         cols = ("PID", "AT", "BT", "CT", "TAT", "WT")
@@ -99,10 +238,17 @@ class App(tk.Tk):
         self.tree.pack(fill="both", expand=True)
 
     def _card(self, parent, title):
-        f = tk.Frame(parent, bg=PANEL, padx=14, pady=8)
+        f = tk.Frame(
+            parent,
+            bg=SUMMARY,
+            padx=14,
+            pady=8,
+            highlightthickness=1,
+            highlightbackground=SUMMARY_EDGE,
+        )
         f.pack(side="left", padx=(0, 10))
-        tk.Label(f, text=title, bg=PANEL, fg="#a699c9").pack(anchor="w")
-        lbl = tk.Label(f, text="-", bg=PANEL, fg=FG, font=("Segoe UI", 18, "bold"))
+        tk.Label(f, text=title, bg=SUMMARY, fg="#d4cbf7").pack(anchor="w")
+        lbl = tk.Label(f, text="-", bg=SUMMARY, fg="#ffffff", font=("Segoe UI", 18, "bold"))
         lbl.pack(anchor="w")
         return lbl
 
@@ -189,17 +335,15 @@ class App(tk.Tk):
         for s in res.segments:
             xa, xb = x0 + s.start * unit, x0 + s.end * unit
             if s.is_idle:
-                c.create_rectangle(
-                    xa, y0, xb, y0 + h, fill="#4a3f6b", outline="#a699c9", stipple="gray50"
-                )
-                c.create_text((xa + xb) / 2, y0 + h / 2, text="IDLE", fill="#ece6fa")
+                c.create_rectangle(xa, y0, xb, y0 + h, fill=IDLE, outline=PANEL, width=2)
+                c.create_text((xa + xb) / 2, y0 + h / 2, text="IDLE", fill=BLOCK_TEXT)
             else:
-                c.create_rectangle(xa, y0, xb, y0 + h, fill=color[s.label], outline=BG, width=2)
+                c.create_rectangle(xa, y0, xb, y0 + h, fill=color[s.label], outline=PANEL, width=2)
                 c.create_text(
                     (xa + xb) / 2,
                     y0 + h / 2,
                     text=s.label,
-                    fill="#0d0820",
+                    fill=BLOCK_TEXT,
                     font=("Segoe UI", 10, "bold"),
                 )
             c.create_text(xa, y0 + h + 14, text=str(s.start), fill=FG)  # start timestamp
